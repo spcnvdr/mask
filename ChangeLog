@@ -1,0 +1,15 @@
+2020-04-02  spcnvdr  <spcnvdr@Vex>
+
+	* LICENSE: New file.
+	* mask.c (str_to_long): Added to convert strings to long ints
+	(print_class): Re-ordered to make more sense
+	(is_valid_ip): Stop using atoi()
+	(ip_to_str): Stop using strcpy()
+	(main): Return EXIT_SUCCESS instead of 0.
+
+2020-04-01  spcnvdr  <spcnvdr@Vex>
+
+	* mask.c (print_class): Identify different IP types 
+	(print_from_cidr): Imrpove the look of output
+	(print_from_netmask): Improve the look of output
+	(banner): Because banners are cool in programs
