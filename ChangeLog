@@ -1,3 +1,8 @@
+2021-02-23  spcnvdr
+
+	(ip_to_str): Fix warning message about possible string truncation
+
+
 2020-04-02  spcnvdr  <spcnvdr@Vex>
 
 	* LICENSE: New file.

@@ -249,7 +249,7 @@ char *ip_to_str(uint32_t ip){
 	char *ipstr;
 	struct in_addr ipaddr;
 
-	if((ipstr = malloc(20 * sizeof(char))) == NULL){
+	if((ipstr = malloc(25 * sizeof(char))) == NULL){
 		perror("malloc");
 		exit(EXIT_FAILURE);
 	}
