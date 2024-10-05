@@ -74,7 +74,7 @@ long str_to_long(const char *str){
 /** Print class of an IPv4 address
  *  @param addr ip address as an unsigned integer
  */
-void print_class(uint32_t addr){
+void print_class(const uint32_t addr){
 	uint32_t ip = ntohl(addr);
 
 	printf("%-12s ", "Class:");
@@ -136,7 +136,7 @@ void print_class(uint32_t addr){
  *  @returns 1 (true) is valid, else 0
  *
  */
-int is_valid_mask(uint32_t netmask){
+int is_valid_mask(const uint32_t netmask){
 	uint32_t i, j, t;
 	t = ntohl(netmask);
 	i = ~t;
@@ -151,7 +151,6 @@ int is_valid_mask(uint32_t netmask){
  */
 int is_valid_ip(const char *ip){
 	size_t i;
-	long j;
 	char *temp, *nip;
 
 	if(ip == NULL)
@@ -181,7 +180,7 @@ int is_valid_ip(const char *ip){
 	} else {
 		while(temp){
 			i++;
-			j = str_to_long(temp);
+			long j = str_to_long(temp);
 			if(j > 255 || j < 0){
 				free(nip);
 				return(0);
@@ -208,7 +207,7 @@ int is_valid_ip(const char *ip){
  *  @returns The IP address portion of the CIDR IP
  *
  */
-char *split_cidr(char* cidr, char **net){
+char *split_cidr(char *cidr, char **net){
 	char *ip  = strtok(cidr, "/");
 	*net = strtok(NULL, "-");
 	return(ip);
@@ -220,7 +219,7 @@ char *split_cidr(char* cidr, char **net){
  *  @returns the incremented IP in big endian form (network)
  *
  */
-uint32_t increment_ip(uint32_t ip){
+uint32_t increment_ip(const uint32_t ip){
 	uint32_t temp = ntohl(ip);
 	temp++;
 	return(htonl(temp));
@@ -232,7 +231,7 @@ uint32_t increment_ip(uint32_t ip){
  *  @returns the incremented IP in big endian form (network)
  *
  */
-uint32_t decrement_ip(uint32_t ip){
+uint32_t decrement_ip(const uint32_t ip){
 	uint32_t temp = ntohl(ip);
 	temp--;
 	return(htonl(temp));
@@ -245,16 +244,23 @@ uint32_t decrement_ip(uint32_t ip){
  *  NOTE: It is the caller's responsibility to free the buffer after use!
  *
  */
-char *ip_to_str(uint32_t ip){
+char *ip_to_str(const uint32_t ip){
 	char *ipstr;
 	struct in_addr ipaddr;
 
-	if((ipstr = malloc(25 * sizeof(char))) == NULL){
+	if((ipstr = malloc(24 * sizeof(char))) == NULL){
 		perror("malloc");
 		exit(EXIT_FAILURE);
 	}
+
 	ipaddr.s_addr = ip;
-	strncpy(ipstr, inet_ntoa(ipaddr), 20);
+	if(!inet_ntop(AF_INET, &ipaddr, ipstr, INET_ADDRSTRLEN)) {
+		perror("inet_ntop");
+		free(ipstr);
+		exit(EXIT_FAILURE);
+	}
+
+	// strncpy(ipstr, inet_ntoa(ipaddr), 20);
 	return(ipstr);
 
 }
@@ -267,10 +273,18 @@ char *ip_to_str(uint32_t ip){
  *
  */
 uint32_t str_to_ip(const char *addr){
+	int ret;
 	struct sockaddr_in sa;
 
 	// store the IP address in sa:
-	inet_pton(AF_INET, addr, &(sa.sin_addr));
+	if((ret = inet_pton(AF_INET, addr, &(sa.sin_addr))) != 1) {
+		if (ret == -1) {
+			perror("inet_pton");
+		} else {
+			fprintf(stderr, "inet_pton: invalid src address\n");
+		}
+		exit(EXIT_FAILURE);
+	}
 	uint32_t ip = sa.sin_addr.s_addr;
 	return(ip);
 }
@@ -324,7 +338,7 @@ uint32_t cidr_to_netmask(const char *cidr){
  *  @returns the wildcard mask as an unsigned integer
  *
  */
-uint32_t netmask_to_wildcard(uint32_t netmask){
+uint32_t netmask_to_wildcard(const uint32_t netmask){
 	uint32_t wildcard = 0xffffffff & (~netmask);
 	return(wildcard);
 }
@@ -353,7 +367,7 @@ uint32_t netmask_to_cidr(uint32_t netmask){
  *  @returns the first IP address as an unsigned integer
  *
  */
-uint32_t first_ip(uint32_t ip, uint32_t netmask){
+uint32_t first_ip(const uint32_t ip, const uint32_t netmask){
 	uint32_t first = ip & netmask;
 	return(first);
 
@@ -366,7 +380,7 @@ uint32_t first_ip(uint32_t ip, uint32_t netmask){
  *  @returns the last IP address as an unsigned integer
  *
  */
-uint32_t last_ip(uint32_t ip, uint32_t netmask){
+uint32_t last_ip(const uint32_t ip, const uint32_t netmask){
 	uint32_t last = 0xffffffff & (ip | (~netmask));
 	return(last);
 
@@ -378,7 +392,7 @@ uint32_t last_ip(uint32_t ip, uint32_t netmask){
  *  @param returns number of IP addresses in a subnet
  *
  */
-uint32_t total_addrs(uint32_t cidr){
+uint32_t total_addrs(const uint32_t cidr){
 	uint32_t host, addrs = 1;
 	host = 32 - cidr;
 
@@ -576,13 +590,13 @@ int main(int argc, char *argv[]){
 
 	banner();
 
-	if(argc == 3){
-		nm = argv[++optind];
-		print_from_netmask(ip, nm);
-	}
-	else{
+	/* If CIDR */
+	if (argc != 3) {
 		print_from_cidr(ip);
+		return(EXIT_SUCCESS);
 	}
 
+	nm = argv[++optind];
+	print_from_netmask(ip, nm);
 	return(EXIT_SUCCESS);
 }
