@@ -176,6 +176,7 @@ int is_valid_ip(const char *ip){
 
 	/* Check that all octets are a valid number */
 	if(temp == NULL){
+		free(nip);
 		return(0);
 	} else {
 		while(temp){
