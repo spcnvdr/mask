@@ -145,63 +145,6 @@ int is_valid_mask(const uint32_t netmask){
 }
 
 
-/** Determine if an IPv4 address is valid
- *  @param ip the IPv4 address to check
- *  @returns 1 if valid, 0 if invalid
- */
-int is_valid_ip(const char *ip){
-	size_t i;
-	char *temp, *nip;
-
-	if(ip == NULL)
-		return(0);
-
-	/* Create a copy so as not to modify original string */
-	if((nip = strdup(ip)) == NULL){
-		perror("strdup");
-		exit(EXIT_FAILURE);
-	}
-
-
-	/* Make sure only digits are in the IP address */
-	for(i = 0; i < strlen(nip); i++){
-		if(ip[i] != '.' && !isdigit(ip[i])){
-			free(nip);
-			return(0);
-		}
-	}
-
-	i = 0;
-	temp = strtok(nip, ".");
-
-	/* Check that all octets are a valid number */
-	if(temp == NULL){
-		free(nip);
-		return(0);
-	} else {
-		while(temp){
-			i++;
-			long j = str_to_long(temp);
-			if(j > 255 || j < 0){
-				free(nip);
-				return(0);
-			}
-
-			temp = strtok(NULL, ".");
-		}
-	}
-
-	/* Make sure there are 4 octets */
-	if(i != 4){
-		free(nip);
-		return(0);
-	}
-
-	free(nip);
-	return(1);
-}
-
-
 /** Splits an IP address in CIDR notation to IP and net bits
  *  @param cidr is a string IP in CIDR notation, e.g. 192.168.1.1/24
  *  @param net an argument to hold the number of net bits .e.g 24
@@ -282,7 +225,7 @@ uint32_t str_to_ip(const char *addr){
 		if (ret == -1) {
 			perror("inet_pton");
 		} else {
-			fprintf(stderr, "inet_pton: invalid src address\n");
+			fprintf(stderr, "Error: invalid IP address %s\n", addr);
 		}
 		exit(EXIT_FAILURE);
 	}
@@ -426,11 +369,6 @@ void print_from_cidr(char *addr){
 		exit(EXIT_FAILURE);
 	}
 
-	if(!is_valid_ip(ip)){
-		fprintf(stderr, "Error: Invalid IP address!\n");
-		exit(EXIT_FAILURE);
-	}
-
 	ipaddr = str_to_ip(ip);
 	netmask = cidr_to_netmask(net);
 	wildcard = ip_to_str(netmask_to_wildcard(netmask));
@@ -483,20 +421,15 @@ void print_from_netmask(char *addr, char *subnet){
 
 
 	/* Check IP and CIDR number */
-	if(subnet == NULL || !is_valid_ip(subnet)){
+	if(subnet == NULL){
 		fprintf(stderr, "Error: Missing subnet mask!\n");
-		exit(EXIT_FAILURE);
-	}
-
-	if(!is_valid_ip(addr)){
-		fprintf(stderr, "Error: Invalid IP address!\n");
 		exit(EXIT_FAILURE);
 	}
 
 	ipaddr = str_to_ip(addr);
 	netmask = str_to_ip(subnet);
 
-	if(!is_valid_ip(subnet) || !is_valid_mask(netmask)){
+	if(!is_valid_mask(netmask)){
 		fprintf(stderr, "Error: Invalid subnet mask!\n");
 		exit(EXIT_FAILURE);
 	}
